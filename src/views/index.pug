@@ -1,0 +1,17 @@
+doctype html
+html(lang="hr")
+  head
+    meta(charset="UTF-8")
+    title OIDC Login Demo
+  body
+    h1 Auth0 Login Demo
+    if username
+      p Dobrodošli, #[strong= username]!
+      p 
+        a(href="/private") Idi na zaštićenu stranicu (Private)
+      p 
+        a(href="/logout") Odjava (Logout)
+    else
+      p Korisnik nije prijavljen.
+      p 
+        a(href="/login") Prijava (Login)
