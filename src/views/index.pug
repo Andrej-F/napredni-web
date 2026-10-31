@@ -2,16 +2,21 @@ doctype html
 html(lang="hr")
   head
     meta(charset="UTF-8")
-    title OIDC Login Demo
+    title Sustav za propusnice
   body
-    h1 Auth0 Login Demo
-    if username
-      p Dobrodošli, #[strong= username]!
+    h1 Sustav za propusnice
+
+    p Ukupno propusnica: #{totalPasses}
+    p Aktivne propusnice: #{activePasses}
+
+    hr
+
+    if isAuthenticated
+      p Prijavljeni ste kao: #{user.name || user.sub}
       p 
-        a(href="/private") Idi na zaštićenu stranicu (Private)
+        a(href="/admin/passes") Upravljanje propusnicama
       p 
-        a(href="/logout") Odjava (Logout)
+        a(href="/logout") Odjava
     else
-      p Korisnik nije prijavljen.
       p 
-        a(href="/login") Prijava (Login)
+        a(href="/login") Prijava

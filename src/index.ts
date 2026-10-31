@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
-import { testConnection } from './db.js';
+import pool,{ initDb, testConnection } from './db.js';
 import oidc from 'express-openid-connect';
 
 dotenv.config();
@@ -34,21 +34,38 @@ app.use(express.static(path.join(__dirname,'public')));
 
 app.use(auth(config));
 
-app.get('/', (req: Request, res: Response) => {
-  let username: string | undefined;
-  if(req.oidc.isAuthenticated()){
-    username = req.oidc.user?.name ?? req.oidc.user?.sub;
+app.get('/', async (req: Request, res: Response) => {
+  const isAuthenticated = req.oidc.isAuthenticated();
+  const user = req.oidc.user;
+
+  let totalPasses = 0;
+  let activePasses = 0;
+
+  try {
+    const totalResult = await pool.query('SELECT COUNT(*) FROM passes');
+    const activeResult = await pool.query("SELECT COUNT(*) FROM passes WHERE status = 'ACTIVE'");
+
+    totalPasses = parseInt(totalResult.rows[0]?.count ?? '0', 10);
+    activePasses = parseInt(activeResult.rows[0]?.count ?? '0', 10);
+  } catch (error) {
+    console.error('Greška pri dohvatu statistike iz baze:', error);
   }
-  res.render('index', {username});
+
+  res.render('index', {
+    isAuthenticated,
+    user,
+    totalPasses,
+    activePasses,
+  });
 });
 
-app.get('/private',requiresAuth(),(req: Request, res: Response)=>{
-    const user = JSON.stringify(req.oidc.user,null,2);
-    res.render('private',{user});
-})
+app.get('/admin/passes', requiresAuth(), (req: Request, res: Response) => {
+  res.send(`Dobrodošli na zaštićeno upravljanje propusnicama, ${req.oidc.user?.name || req.oidc.user?.sub}!`);
+});
 app.listen(port, async () => {
   console.log(`Server running`);
   
   // Ovdje pozivamo provjeru baze
   await testConnection();
+  await initDb();
 });
