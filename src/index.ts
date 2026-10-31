@@ -2,11 +2,13 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import pool,{ initDb, testConnection } from './db.js';
-import oidc from 'express-openid-connect';
+import {auth as jwtAuth, requiredScopes} from 'express-oauth2-jwt-bearer';
+import {auth as oidcAuth, requiresAuth} from 'express-openid-connect'
+import {randomUUID} from 'crypto';
+import QRCode from 'qrcode';
 
 dotenv.config();
 
-const {auth, requiresAuth} = oidc;
 const externalUrl = process.env.RENDER_EXTERNAL_URL;
 const port = process.env.PORT || 3000;
 
@@ -32,7 +34,7 @@ app.use(express.urlencoded( {extended: true}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname,'public')));
 
-app.use(auth(config));
+app.use(oidcAuth(config));
 
 app.get('/', async (req: Request, res: Response) => {
   const isAuthenticated = req.oidc.isAuthenticated();
@@ -62,6 +64,62 @@ app.get('/', async (req: Request, res: Response) => {
 app.get('/admin/passes', requiresAuth(), (req: Request, res: Response) => {
   res.send(`Dobrodošli na zaštićeno upravljanje propusnicama, ${req.oidc.user?.name || req.oidc.user?.sub}!`);
 });
+
+const checkJwt = jwtAuth({
+    audience: process.env.AUDIENCE as string,
+    issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}`,
+});
+const checkReadScope = requiredScopes('read:passes');
+
+app.get('/passes/:id', checkJwt, checkReadScope, async(req:Request, res:Response)=>{
+    const passId = req.params.id;
+    try{//let's hope noone tries to do sql injection on my app :DDDDDDDDDDDDDD
+        const result = await pool.query('select * from passes where id = $1', [passId]);
+        if(result.rows.length===0){
+            return res.status(404).json({error:'Propusnica nije pronađena'});
+        }
+        const pass = result.rows[0];
+        res.json({
+            id:pass.id,
+            name:pass.name,
+            document:pass.document,
+            issuedAt:pass.issued_at.toISOString(),
+            status:pass.status,
+        });
+    } catch(error){
+        console.error('Greška pri dohvatu propusnice putem API: ', error);
+        res.status(500).json({error: 'Greška na poslužitelju'});
+    }
+});
+
+const checkCreateScope = requiredScopes('create:passes');
+
+app.post('/passes',checkJwt,checkCreateScope, async(req:Request, res:Response)=>{
+    const {name,document} = req.body;
+    if(!name || typeof name !=='string' || name.trim()==='' || !document || typeof document !=='string' || document.trim()===''){
+        return res.status(400).json({error: 'Polja "name" i "document" su obavezna'});
+    }
+    const id = randomUUID();
+    const issuedAt = new Date();
+    const status = 'ACTIVE';
+    try{
+        await pool.query(
+      'INSERT INTO passes (id, name, document, issued_at, status) VALUES ($1, $2, $3, $4, $5)',
+      [id, name, document, issuedAt, status]
+    );
+    const publicInfoUrl = `${externalUrl}/info/${id}`;
+    const qrBuffer = await QRCode.toBuffer(publicInfoUrl, { type: 'png' });
+
+    const passUrl = `${externalUrl}/passes/${id}`;
+    res.setHeader('Location', passUrl);
+
+    res.status(201).type('image/png').send(qrBuffer);
+    }catch(error){
+        console.error('Greška pri stvaranju propusnice putem API: ', error);
+        res.status(500).json({error: 'Greška na poslužitelju'});
+    }
+})
+
 app.listen(port, async () => {
   console.log(`Server running`);
   
