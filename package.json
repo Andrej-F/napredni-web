@@ -1,0 +1,40 @@
+{
+  "name": "napredni-web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run clean && tsc && npm run copy-views && npm run copy-public",
+    "clean": "shx rm -rf dist",
+    "copy-views": "shx cp -r src/views/ dist/views",
+    "copy-public": "shx cp -r src/public/ dist/public",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Andrej-F/napredni-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Andrej-F/napredni-web/issues"
+  },
+  "homepage": "https://github.com/Andrej-F/napredni-web#readme",
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "express-session": "^1.19.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "shx": "^0.4.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
