@@ -68,7 +68,7 @@ app.get('/admin/passes', requiresAuth(), (req: Request, res: Response) => {
 const checkJwt = jwtAuth({
     audience: process.env.AUDIENCE as string,
     issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}`,
-    tokenSigningAlg: 'RS256',
+    tokenSigningAlg: 'HS256',
 });
 const checkReadScope = requiredScopes('read:passes');
 
