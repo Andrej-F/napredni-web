@@ -16,7 +16,7 @@ const port = process.env.PORT || 3000;
 const config = {
     authRequired: false,
     idpLogout: true,
-    secret: process.env.SECRET as string,
+    //secret: process.env.SECRET as string,
     baseURL: externalUrl as string,
     clientID: process.env.CLIENT_ID as string,
     issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}`,
