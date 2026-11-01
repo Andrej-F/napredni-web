@@ -6,6 +6,7 @@ import {auth as jwtAuth, requiredScopes} from 'express-oauth2-jwt-bearer';
 import {auth as oidcAuth, requiresAuth} from 'express-openid-connect'
 import {randomUUID} from 'crypto';
 import QRCode from 'qrcode';
+import {getToken, issuePass} from './task2/automat';
 
 dotenv.config();
 
@@ -68,7 +69,7 @@ app.get('/admin/passes', requiresAuth(), (req: Request, res: Response) => {
 const checkJwt = jwtAuth({
     audience: process.env.AUDIENCE as string,
     issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}`,
-    tokenSigningAlg: 'HS256',
+    tokenSigningAlg: 'RS256',
 });
 const checkReadScope = requiredScopes('read:passes');
 
