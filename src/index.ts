@@ -19,7 +19,7 @@ const config = {
     //secret: process.env.SECRET as string,
     baseURL: externalUrl as string,
     clientID: process.env.CLIENT_ID as string,
-    issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}`,
+    issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}/`,
     clientSecret: process.env.CLIENT_SECRET as string,
     authorizationParams:{
         response_type:'code',
@@ -68,8 +68,8 @@ app.get('/admin/passes', requiresAuth(), (req: Request, res: Response) => {
 
 const checkJwt = jwtAuth({
     audience: process.env.AUDIENCE as string,
-    issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}`,
-    tokenSigningAlg: 'RS256',
+    issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}/`,
+    //tokenSigningAlg: 'RS256',
 });
 const checkReadScope = requiredScopes('read:passes');
 
