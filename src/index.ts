@@ -6,17 +6,16 @@ import {auth as jwtAuth, requiredScopes} from 'express-oauth2-jwt-bearer';
 import {auth as oidcAuth, requiresAuth} from 'express-openid-connect'
 import {randomUUID} from 'crypto';
 import QRCode from 'qrcode';
-import {getToken, issuePass} from './task2/automat';
+import {getToken, issuePass} from './task2/automat.js';
 
+//config cijele app
 dotenv.config();
-
 const externalUrl = process.env.RENDER_EXTERNAL_URL;
 const port = process.env.PORT || 3000;
 
 const config = {
     authRequired: false,
     idpLogout: true,
-    //secret: process.env.SECRET as string,
     baseURL: externalUrl as string,
     clientID: process.env.CLIENT_ID as string,
     issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}/`,
@@ -36,7 +35,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname,'public')));
 
 app.use(oidcAuth(config));
-
+//homepage
 app.get('/', async (req: Request, res: Response) => {
   const isAuthenticated = req.oidc.isAuthenticated();
   const user = req.oidc.user;
@@ -53,7 +52,7 @@ app.get('/', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Greška pri dohvatu statistike iz baze:', error);
   }
-
+  //šalje podatke na index.pug
   res.render('index', {
     isAuthenticated,
     user,
@@ -61,7 +60,7 @@ app.get('/', async (req: Request, res: Response) => {
     activePasses,
   });
 });
-
+// endpoint za vratit sve propusnice određenog korisnika
 app.get('/admin/passes', requiresAuth(), async (req: Request, res: Response) => {
   const ownerName = req.oidc.user?.name;
 
@@ -87,7 +86,7 @@ app.get('/admin/passes', requiresAuth(), async (req: Request, res: Response) => 
     res.status(500).send('Greška pri dohvatu propusnica.');
   }
 });
-
+//kreira novu propusnicu
 app.post('/admin/passes', requiresAuth(), async (req: Request, res: Response) => {
   const ownerName = req.oidc.user?.name;
   const { document } = req.body as { document?: unknown };
@@ -101,10 +100,20 @@ app.post('/admin/passes', requiresAuth(), async (req: Request, res: Response) =>
   }
 
   try {
-    await pool.query(
-      `INSERT INTO passes (id, name, document, issued_at, status)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [randomUUID(), ownerName, document.trim(), new Date(), 'ACTIVE']
+    const authority = `https://${process.env.ISSUER_DOMAIN}/`;
+    const token = await getToken(
+      authority,
+      process.env.AUDIENCE as string,
+      process.env.API_CLIENT_ID as string,
+      process.env.API_CLIENT_SECRET as string,
+      'create:passes'
+    );
+
+    await issuePass(
+      `${externalUrl}/passes`,
+      token,
+      ownerName,
+      document.trim()
     );
 
     res.redirect('/admin/passes');
