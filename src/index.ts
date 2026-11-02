@@ -35,6 +35,17 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname,'public')));
 
 app.use(oidcAuth(config));
+
+//config autha
+const checkJwt = jwtAuth({
+    audience: process.env.AUDIENCE as string,
+    issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}/`,
+    tokenSigningAlg: 'RS256',
+    secret: '',
+});
+const checkCreateScope = requiredScopes('create:passes');
+const checkReadScope = requiredScopes('read:passes');
+
 //homepage
 app.get('/', async (req: Request, res: Response) => {
   const isAuthenticated = req.oidc.isAuthenticated();
@@ -86,7 +97,7 @@ app.get('/admin/passes', requiresAuth(), async (req: Request, res: Response) => 
     res.status(500).send('Greška pri dohvatu propusnica.');
   }
 });
-//kreira novu propusnicu
+//kreira novu propusnicu koristeći automat
 app.post('/admin/passes', requiresAuth(), async (req: Request, res: Response) => {
   const ownerName = req.oidc.user?.name;
   const { document } = req.body as { document?: unknown };
@@ -123,8 +134,9 @@ app.post('/admin/passes', requiresAuth(), async (req: Request, res: Response) =>
   }
 });
 
-const allowedPassStatuses = new Set(['ACTIVE', 'CANCELLED']);
+const allowedPassStatuses = new Set(['ACTIVE', 'CANCELLED']); //enum za passove
 
+//promjena statusa propusnice
 app.post('/admin/passes/:id/status', requiresAuth(), async (req: Request, res: Response) => {
   const ownerName = req.oidc.user?.name;
   const { status } = req.body as { status?: unknown };
@@ -155,7 +167,7 @@ app.post('/admin/passes/:id/status', requiresAuth(), async (req: Request, res: R
     res.status(500).send('Greška pri promjeni statusa propusnice.');
   }
 });
-
+//brisanje propusnice
 app.post('/admin/passes/:id/delete', requiresAuth(), async (req: Request, res: Response) => {
   const ownerName = req.oidc.user?.name;
 
@@ -180,14 +192,30 @@ app.post('/admin/passes/:id/delete', requiresAuth(), async (req: Request, res: R
   }
 });
 
-const checkJwt = jwtAuth({
-    audience: process.env.AUDIENCE as string,
-    issuerBaseURL: `https://${process.env.ISSUER_DOMAIN}/`,
-    tokenSigningAlg: 'RS256',
-    secret: '',
-});
-const checkReadScope = requiredScopes('read:passes');
+//javno prikazuje status jedne propusnice
+app.get('/info/:id', async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, document, issued_at, status
+       FROM passes
+       WHERE id = $1`,
+      [req.params.id]
+    );
 
+    if (result.rows.length === 0) {
+      return res.status(404).send('Propusnica nije pronađena.');
+    }
+
+    res.render('pass-info', {
+      pass: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Greška pri dohvatu javnog statusa propusnice:', error);
+    res.status(500).send('Greška pri dohvatu statusa propusnice.');
+  }
+});
+
+//vrati jednu propusnicu
 app.get('/passes/:id', checkJwt, checkReadScope, async(req:Request, res:Response)=>{
     const passId = req.params.id;
     try{//let's hope noone tries to do sql injection on my app :DDDDDDDDDDDDDD
@@ -209,8 +237,7 @@ app.get('/passes/:id', checkJwt, checkReadScope, async(req:Request, res:Response
     }
 });
 
-const checkCreateScope = requiredScopes('create:passes');
-
+//dodavanje nove propusnice
 app.post('/passes',checkJwt,checkCreateScope, async(req:Request, res:Response)=>{
     const {name,document} = req.body;
     if(!name || typeof name !=='string' || name.trim()==='' || !document || typeof document !=='string' || document.trim()===''){

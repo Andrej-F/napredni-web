@@ -1,0 +1,23 @@
+doctype html
+html(lang="hr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    title Status propusnice
+  body
+    h1 Status propusnice
+    p
+      strong ID:
+      |  #{pass.id}
+    p
+      strong Ime:
+      |  #{pass.name}
+    p
+      strong Dokument:
+      |  #{pass.document}
+    p
+      strong Vrijeme izdavanja:
+      |  #{pass.issued_at.toISOString()}
+    p
+      strong Status:
+      |  #{pass.status}
