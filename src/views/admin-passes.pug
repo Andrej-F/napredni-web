@@ -12,6 +12,12 @@ html(lang="hr")
       |  |
       a(href="/logout") Odjava
 
+    h2 Izdaj novu propusnicu
+    form(method="post", action="/admin/passes")
+      label(for="document") Dokument
+      input#document(type="text", name="document", required)
+      button(type="submit") Izdaj propusnicu
+
     if passes.length
       table
         thead

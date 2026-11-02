@@ -88,6 +88,32 @@ app.get('/admin/passes', requiresAuth(), async (req: Request, res: Response) => 
   }
 });
 
+app.post('/admin/passes', requiresAuth(), async (req: Request, res: Response) => {
+  const ownerName = req.oidc.user?.name;
+  const { document } = req.body as { document?: unknown };
+
+  if (!ownerName) {
+    return res.status(400).send('Prijavljeni korisnik nema postavljeno ime.');
+  }
+
+  if (typeof document !== 'string' || document.trim() === '') {
+    return res.status(400).send('Polje "document" je obavezno.');
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO passes (id, name, document, issued_at, status)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [randomUUID(), ownerName, document.trim(), new Date(), 'ACTIVE']
+    );
+
+    res.redirect('/admin/passes');
+  } catch (error) {
+    console.error('Greška pri izdavanju propusnice putem weba:', error);
+    res.status(500).send('Greška pri izdavanju propusnice.');
+  }
+});
+
 const allowedPassStatuses = new Set(['ACTIVE', 'CANCELLED']);
 
 app.post('/admin/passes/:id/status', requiresAuth(), async (req: Request, res: Response) => {
