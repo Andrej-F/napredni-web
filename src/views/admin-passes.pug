@@ -1,0 +1,40 @@
+doctype html
+html(lang="hr")
+  head
+    meta(charset="UTF-8")
+    title Upravljanje propusnicama
+  body
+    h1 Upravljanje propusnicama
+    p Korisnik: #{ownerName}
+
+    p
+      a(href="/") Početna stranica
+      |  |
+      a(href="/logout") Odjava
+
+    if passes.length
+      table
+        thead
+          tr
+            th ID
+            th Dokument
+            th Izdano
+            th Status
+            th Akcije
+        tbody
+          each pass in passes
+            tr
+              td= pass.id
+              td= pass.document
+              td= pass.issued_at
+              td= pass.status
+              td
+                form(method="post", action=`/admin/passes/${pass.id}/status`)
+                  select(name="status")
+                    option(value="ACTIVE", selected=pass.status === "ACTIVE") Aktivna
+                    option(value="CANCELLED", selected=pass.status === "CANCELLED") Otkazana
+                  button(type="submit") Promijeni status
+                form(method="post", action=`/admin/passes/${pass.id}/delete`, onsubmit="return confirm('Jeste li sigurni da želite obrisati ovu propusnicu?');")
+                  button(type="submit") Obriši
+    else
+      p Nemate nijednu propusnicu.

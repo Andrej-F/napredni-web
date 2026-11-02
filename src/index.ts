@@ -62,8 +62,87 @@ app.get('/', async (req: Request, res: Response) => {
   });
 });
 
-app.get('/admin/passes', requiresAuth(), (req: Request, res: Response) => {
-  res.send(`Dobrodošli na zaštićeno upravljanje propusnicama, ${req.oidc.user?.name || req.oidc.user?.sub}!`);
+app.get('/admin/passes', requiresAuth(), async (req: Request, res: Response) => {
+  const ownerName = req.oidc.user?.name;
+
+  if (!ownerName) {
+    return res.status(400).send('Prijavljeni korisnik nema postavljeno ime.');
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, name, document, issued_at, status
+       FROM passes
+       WHERE name = $1
+       ORDER BY issued_at DESC`,
+      [ownerName]
+    );
+
+    res.render('admin-passes', {
+      ownerName,
+      passes: result.rows,
+    });
+  } catch (error) {
+    console.error('Greška pri dohvatu korisnikovih propusnica:', error);
+    res.status(500).send('Greška pri dohvatu propusnica.');
+  }
+});
+
+const allowedPassStatuses = new Set(['ACTIVE', 'CANCELLED']);
+
+app.post('/admin/passes/:id/status', requiresAuth(), async (req: Request, res: Response) => {
+  const ownerName = req.oidc.user?.name;
+  const { status } = req.body as { status?: unknown };
+
+  if (!ownerName) {
+    return res.status(400).send('Prijavljeni korisnik nema postavljeno ime.');
+  }
+
+  if (typeof status !== 'string' || !allowedPassStatuses.has(status)) {
+    return res.status(400).send('Nepoznat status propusnice.');
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE passes
+       SET status = $1
+       WHERE id = $2 AND name = $3`,
+      [status, req.params.id, ownerName]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).send('Propusnica nije pronađena.');
+    }
+
+    res.redirect('/admin/passes');
+  } catch (error) {
+    console.error('Greška pri promjeni statusa propusnice:', error);
+    res.status(500).send('Greška pri promjeni statusa propusnice.');
+  }
+});
+
+app.post('/admin/passes/:id/delete', requiresAuth(), async (req: Request, res: Response) => {
+  const ownerName = req.oidc.user?.name;
+
+  if (!ownerName) {
+    return res.status(400).send('Prijavljeni korisnik nema postavljeno ime.');
+  }
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM passes WHERE id = $1 AND name = $2',
+      [req.params.id, ownerName]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).send('Propusnica nije pronađena.');
+    }
+
+    res.redirect('/admin/passes');
+  } catch (error) {
+    console.error('Greška pri brisanju propusnice:', error);
+    res.status(500).send('Greška pri brisanju propusnice.');
+  }
 });
 
 const checkJwt = jwtAuth({
