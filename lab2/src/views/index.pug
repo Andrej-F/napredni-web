@@ -1,0 +1,54 @@
+doctype html
+html(lang="hr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    title Web Security Lab
+    link(rel="stylesheet", href="/styles.css")
+  body
+    h1 Web Security Lab
+    p Obrazovni laboratorij za demonstraciju sigurnosti web aplikacija.
+    p Koriste se isključivo sintetički podaci. Ranjivi načini rada namjerno su nesigurni.
+
+    fieldset
+      legend SQL Injection
+      p Demonstracija razlike između nesigurnog sastavljanja SQL upita i parametriziranog upita.
+      p
+        strong Način rada:
+        | 
+        span#sql-mode.status-secure Sigurni način rada
+      label
+          input#sql-toggle(type="checkbox")
+          span Uključi ranjivi način rada
+      p U ranjivom načinu možete testirati tautologiju u polju korisničkog imena:
+        code ' OR '1'='1' -- 
+      form#sql-form
+        label(for="sql-username") Korisničko ime
+        input#sql-username(type="text", maxlength="100", required)
+        label(for="sql-pin") PIN
+        input#sql-pin(type="password", maxlength="10", required)
+        button(type="submit") Testiraj upit
+      pre#sql-result Rezultat će se prikazati ovdje.
+
+    fieldset
+      legend Zaštita autentifikacije
+      p Demonstracija zaštite od ponavljanih neuspješnih pokušaja prijave.
+      p
+        strong Način rada:
+        | 
+        span#auth-mode.status-secure Sigurni način rada
+      label
+          input#auth-toggle(type="checkbox")
+          span Uključi ranjivi način rada
+      p U oba načina rada lozinka se provjerava. Ranjivi način nema ograničenje pokušaja, dok sigurni način nakon tri neuspjela pokušaja blokira prijavu na pet minuta.
+      form#auth-form
+        label(for="auth-username") Korisničko ime
+        input#auth-username(type="text", maxlength="100", required)
+        label(for="auth-password") Lozinka
+        input#auth-password(type="password", maxlength="100", required)
+        button(type="submit") Prijava
+        button#logout(type="button") Odjava
+      p#auth-status Niste prijavljeni.
+      pre#auth-result Rezultat će se prikazati ovdje.
+
+    script(src="/app.js", defer)

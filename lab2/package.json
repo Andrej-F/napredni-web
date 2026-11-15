@@ -1,0 +1,31 @@
+{
+  "name": "web-security-lab",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "npm run clean && tsc && npm run copy-views && npm run copy-public",
+    "clean": "shx rm -rf dist",
+    "copy-views": "shx cp -r src/views dist/views",
+    "copy-public": "shx cp -r src/public dist/public",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "express-session": "^1.19.0",
+    "pg": "^8.23.1",
+    "pug": "^3.0.4"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "shx": "^0.4.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

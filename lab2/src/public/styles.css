@@ -1,0 +1,30 @@
+body {
+  margin: 20px;
+  font-family: "Times New Roman", serif;
+  font-size: 16px;
+}
+
+fieldset {
+  max-width: 700px;
+  margin: 20px 0;
+}
+
+label,
+input,
+button {
+  display: block;
+  margin-top: 8px;
+}
+
+input {
+  width: 250px;
+}
+
+pre {
+  max-width: 700px;
+  min-height: 40px;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid #808080;
+  white-space: pre-wrap;
+}
