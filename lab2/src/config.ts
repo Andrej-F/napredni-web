@@ -3,10 +3,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production';
-const sessionSecret = process.env.SESSION_SECRET;
+const sessionSecret = process.env.SECRET;
 
 if (isProduction && (!sessionSecret || sessionSecret.length < 32)) {
-  throw new Error('SESSION_SECRET must contain at least 32 characters in production.');
+  throw new Error('SECRET must contain at least 32 characters in production.');
 }
 
 export const config = {
