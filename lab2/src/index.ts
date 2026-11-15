@@ -21,6 +21,8 @@ import {
 
 const app = express();
 
+// Render terminates HTTPS at its proxy and forwards the request to Node over HTTP.
+app.set('trust proxy', 1);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 app.use(express.json());
